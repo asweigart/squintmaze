@@ -192,11 +192,11 @@ def displayMToRestartScreen():
             if event.type == QUIT:
                 terminate()
             elif event.type == KEYUP:
-                if event.key in (K_ESCAPE, ord(' ')):
+                if event.key in (K_ESCAPE, ord(' '), K_RETURN):
                     DISPLAY.blit(MAZE_IMAGE, MAZE_RECT)
                     pygame.display.update()
                     return
-                if event.key == ord('m'):
+                elif event.key == ord('m'):
                     restartGame()
                     DISPLAY.blit(MAZE_IMAGE, MAZE_RECT)
                     pygame.display.update()
@@ -292,7 +292,7 @@ def waitUntilEscOrSpace(duration=None, flashImage=None, flashRect=None):
             elif event.type == KEYUP:
                 if event.key == K_ESCAPE:
                     return 'esc'
-                if event.key == ord(' '):
+                if event.key in (ord(' '), K_RETURN):
                     return 'space'
 
         if flashImage is not None:
