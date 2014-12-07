@@ -51,7 +51,6 @@ GAME_START_TIME = None
 MAZE_IMAGE = pygame.image.load('maze.png')
 MAZE_RECT = MAZE_IMAGE.get_rect()
 
-PRESS_M_AGAIN = pygame.image.load('pressmagain.png')
 
 def main():
     global PX, PY, STEPS, ELAPSED, GAME_START_TIME
@@ -79,16 +78,29 @@ def main():
                 terminate()
 
             elif event.type == KEYUP:
-                if event.key in (K_UP, ord('W')):
+                if event.key in (K_UP, ord('w')):
                     moveDirection = UP
-                elif event.key in (K_DOWN, ord('S')):
+                elif event.key in (K_DOWN, ord('s')):
                     moveDirection = DOWN
-                elif event.key in (K_LEFT, ord('A')):
+                elif event.key in (K_LEFT, ord('a')):
                     moveDirection = LEFT
-                elif event.key in (K_RIGHT, ord('D')):
+                elif event.key in (K_RIGHT, ord('d')):
                     moveDirection = RIGHT
                 elif event.key == K_ESCAPE:
                     terminate()
+                elif event.key == ord('m'):
+                    fadeScreen()
+                    displayMToRestartScreen()
+                    DISPLAY.blit(MAZE_IMAGE, MAZE_RECT)
+                    pygame.display.update()
+                elif event.key == ord('t'):
+                    pass # TODO
+                    fadeScreen()
+                    print('Calling fad screen T')
+
+                    DISPLAY.blit(MAZE_IMAGE, MAZE_RECT)
+                    pygame.display.update()
+
 
         # move the player
         if moveDirection:
@@ -158,10 +170,50 @@ def main():
         pygame.display.update()
         CLOCK.tick(FPS)
 
+
+def fadeScreen():
+    origSurface = DISPLAY.copy()
+    fadeSurface = pygame.Surface((1920, 1080)).convert_alpha()
+
+    for alpha in range(0, 192, 16):
+        DISPLAY.blit(origSurface, (0, 0))
+        fadeSurface.fill((0, 0, 0, alpha))
+        DISPLAY.blit(fadeSurface, (0, 0))
+        pygame.display.update()
+
+
+def displayMToRestartScreen():
+    global PX, PY, STEPS, ELAPSED, GAME_START_TIME
+
+    pressM = pygame.image.load('pressMAgain.png')
+    r = pressM.get_rect()
+    r.center = (1920 / 2, 1080 / 2)
+    DISPLAY.blit(pressM, r)
+    displaySpaceToContinue()
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                terminate()
+            elif event.type == KEYUP:
+                if event.key in (K_ESCAPE, ord(' ')):
+                    return
+                if event.key == ord('m'):
+                    # Start the game over by reseting all the global variables
+                    PX = CELLSIZE
+                    PY = CELLSIZE
+                    STEPS = 0
+                    ELAPSED = 0
+                    GAME_START_TIME = time.time()
+                    return
+
+
+
 def loadSavedGame():
     if os.path.exists(SAVE_GAME_FILE):
         fp = open(SAVE_GAME_FILE)
-        px, py, steps, elapsed = [int(i) for i in fp.readline().split(',')]
+        px, py, steps, elapsed = fp.readline().split(',')
+        px, py, steps, elapsed = int(px), int(py), int(steps), float(elapsed)
         fp.close()
         return px, py, steps, elapsed
     else:
@@ -214,6 +266,22 @@ def displaySpaceToContinue():
     r.center = (1920 / 2, 900)
     DISPLAY.blit(space, r)
     pygame.display.update()
+
+
+def displayPlayerLocationAndHold():
+    # display "You are the blue dot"
+    # TODO - deal with other quadrants in case of the text going off the screen later
+    youAre = pygame.image.load('youAre.png')
+    r = youAre.get_rect()
+    r.topleft = (PX + 6 + 10 + 20, PY + 3)
+    DISPLAY.blit(youAre, r)
+
+    upLeft = pygame.image.load('upLeftArrow.png')
+    r = upLeft.get_rect()
+    r.topleft = (PX + 6, PY + 3)
+    displaySpaceToContinue()
+    pygame.display.update()
+    return waitUntilEscOrSpace(None, upLeft, r)
 
 
 def titleSequence():
@@ -321,19 +389,7 @@ def titleSequence():
     pygame.draw.rect(DISPLAY, BLUE, getPlayerRect())
     pygame.draw.rect(DISPLAY, GREEN, END_POINT_RECT)
 
-    # display "You are the blue dot"
-    # TODO - deal with other quadrants in case of the text going off the screen later
-    youAre = pygame.image.load('youAre.png')
-    r = youAre.get_rect()
-    r.topleft = (PX + 6 + 10 + 20, PY + 3)
-    DISPLAY.blit(youAre, r)
-
-    upLeft = pygame.image.load('upLeftArrow.png')
-    r = upLeft.get_rect()
-    r.topleft = (PX + 6, PY + 3)
-    displaySpaceToContinue()
-    pygame.display.update()
-    if waitUntilEscOrSpace(None, upLeft, r) == 'esc':
+    if displayPlayerLocationAndHold() == 'esc':
         introSound.stop()
         return
 
