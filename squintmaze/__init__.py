@@ -21,7 +21,7 @@
 # NOTE: Seriously, don't play this game that much. You'll ruin your eyes. Just edit the SAVED_GAME.txt file and cheat like everyone else does.
 
 
-import pygame, sys, time, os
+import pygame, sys, time, os, datetime
 from pygame.locals import *
 
 # Various constants here
@@ -51,6 +51,7 @@ GAME_START_TIME = None
 MAZE_IMAGE = pygame.image.load('maze.png')
 MAZE_RECT = MAZE_IMAGE.get_rect()
 
+FONT = pygame.font.SysFont(None, 24)
 
 def main():
     global PX, PY, STEPS, ELAPSED, GAME_START_TIME
@@ -91,16 +92,9 @@ def main():
                 elif event.key == ord('m'):
                     fadeScreen()
                     displayMToRestartScreen()
-                    DISPLAY.blit(MAZE_IMAGE, MAZE_RECT)
-                    pygame.display.update()
                 elif event.key == ord('t'):
-                    pass # TODO
                     fadeScreen()
-                    print('Calling fad screen T')
-
-                    DISPLAY.blit(MAZE_IMAGE, MAZE_RECT)
-                    pygame.display.update()
-
+                    displayElapsed()
 
         # move the player
         if moveDirection:
@@ -162,6 +156,9 @@ def main():
                 CLOCK.tick(FPS)
             moveDirection = None
 
+            if (PX, PY) == END_POINT:
+                displayEndSequence()
+
         # draw the blinking player
         if (time.time() % 1) / 4 < 0.125:
             pygame.draw.rect(DISPLAY, BLUE, getPlayerRect())
@@ -183,8 +180,6 @@ def fadeScreen():
 
 
 def displayMToRestartScreen():
-    global PX, PY, STEPS, ELAPSED, GAME_START_TIME
-
     pressM = pygame.image.load('pressMAgain.png')
     r = pressM.get_rect()
     r.center = (1920 / 2, 1080 / 2)
@@ -197,17 +192,66 @@ def displayMToRestartScreen():
                 terminate()
             elif event.type == KEYUP:
                 if event.key in (K_ESCAPE, ord(' ')):
+                    DISPLAY.blit(MAZE_IMAGE, MAZE_RECT)
+                    pygame.display.update()
                     return
                 if event.key == ord('m'):
-                    # Start the game over by reseting all the global variables
-                    PX = CELLSIZE
-                    PY = CELLSIZE
-                    STEPS = 0
-                    ELAPSED = 0
-                    GAME_START_TIME = time.time()
+                    restartGame()
+                    DISPLAY.blit(MAZE_IMAGE, MAZE_RECT)
+                    pygame.display.update()
                     return
 
 
+def restartGame():
+    global PX, PY, STEPS, ELAPSED, GAME_START_TIME
+
+    # Start the game over by reseting all the global variables
+    PX = CELLSIZE
+    PY = CELLSIZE
+    STEPS = 0
+    ELAPSED = 0
+    GAME_START_TIME = time.time()
+
+
+def displayEndSequence():
+    pygame.mixer.music.stop()
+    pygame.mixer.music.load('radiotuning.mp3')
+    pygame.mixer.music.play(0, 0.0)
+    fadeScreen()
+
+    theEnd = pygame.image.load('theEnd.png')
+    r = theEnd.get_rect()
+    r.center = (1920 / 2, 200)
+    DISPLAY.blit(theEnd, r)
+
+    displayElapsed()
+    restartGame()
+
+    # restart the background music
+    pygame.mixer.music.stop()
+    pygame.mixer.music.load('background.mp3')
+    pygame.mixer.music.play(-1, 0.0)
+
+
+def displayElapsed():
+    textObj = FONT.render('Elapsed: %s' % (datetime.timedelta(seconds=(round(time.time() - GAME_START_TIME)))), 1, WHITE)
+    textRect = textObj.get_rect()
+    textRect.midtop = (1920 / 2, 400)
+    pygame.draw.rect(DISPLAY, BLACK, textRect)
+    DISPLAY.blit(textObj, textRect)
+
+    textObj = FONT.render('Steps: %s' % (STEPS), 1, WHITE)
+    textRect = textObj.get_rect()
+    textRect.midtop = (1920 / 2, 500)
+    pygame.draw.rect(DISPLAY, BLACK, textRect)
+    DISPLAY.blit(textObj, textRect)
+
+    displaySpaceToContinue()
+    displayPlayerLocationAndHold()
+
+    # refresh display away from faded out look
+    DISPLAY.blit(MAZE_IMAGE, MAZE_RECT)
+    pygame.display.update()
 
 def loadSavedGame():
     if os.path.exists(SAVE_GAME_FILE):
@@ -287,7 +331,6 @@ def displayPlayerLocationAndHold():
 def titleSequence():
     introSound = pygame.mixer.Sound('intro.wav')
     introSound.play()
-    #pygame.mixer.music.load('background.mid')
 
     # display "Esc to skip"
     DISPLAY.fill(BLACK)
