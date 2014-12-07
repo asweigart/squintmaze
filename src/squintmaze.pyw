@@ -51,7 +51,8 @@ GAME_START_TIME = None
 MAZE_IMAGE = pygame.image.load('maze.png')
 MAZE_RECT = MAZE_IMAGE.get_rect()
 
-FONT = pygame.font.SysFont(None, 24)
+#FONT = pygame.font.SysFont(None, 24)
+FONT = pygame.font.Font('freesansbold.ttf', 24)
 
 def main():
     global PX, PY, STEPS, ELAPSED, GAME_START_TIME
